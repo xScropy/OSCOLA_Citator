@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-paper text-ink antialiased;
+}
+
+/* Small caps used by Bluebook typefaces */
+.sc {
+  font-variant: small-caps;
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg border border-paper-line bg-paper-card;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-paper-line bg-white px-3 py-1.5 text-sm font-medium text-ink transition hover:bg-paper disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-brand bg-brand px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-50;
+  }
+  .input {
+    @apply w-full rounded-md border border-paper-line bg-white px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium text-ink-soft;
+  }
+  .citation {
+    @apply font-serif text-[15px] leading-relaxed text-ink;
+    overflow-wrap: anywhere;
+  }
+  .h1 {
+    @apply text-2xl font-semibold tracking-tight text-ink;
+  }
+  .h2 {
+    @apply text-sm font-semibold uppercase tracking-wide text-ink-soft;
+  }
+}
