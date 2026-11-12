@@ -20,6 +20,7 @@ This repository implements the MVP (1.0) of the product requirements document.
 | Library | Search, filter (type, tag, collection, verification, style, favourites), sort, notes, tags, favourites and collections. |
 | Duplicates | Detected on save and across the library (same DOI, ISBN, URL, neutral or report citation, or title). Merging only happens when you ask for it. |
 | Bibliography | Grouped and ordered per style; List of Authorities with customisable categories; editable before export. |
+| Document check | Upload a PDF or Word (.docx) document. CiteRight reads the footnotes, recognises the authorities cited (full citations, short forms, cross-references and ibid), records every page and pinpoint, suggests corrections you can accept, reject or edit, optionally shortens every citation after the first, and produces a Table of Authorities with page numbers. Word uploads can be downloaded with the corrected footnotes written back in. Extracted authorities can be added to the library. Uploads are processed in memory and not stored. |
 | Export | DOCX, PDF, TXT, BibTeX, RIS, CSV, CSL-JSON, and copy to clipboard with italics. |
 
 ## Windows app
@@ -83,7 +84,8 @@ backend/app/
   duplicates.py    duplicate detection and grouping
   bibliography.py  bibliography / List of Authorities builder
   export.py        DOCX, PDF, TXT, BibTeX, RIS, CSV, CSL-JSON
-  routers/         auth, library (references, collections, stats), citations (identify, cite, export)
+  documents/       document check: footnote extraction, citation parser, analysis, Word rewriter
+  routers/         auth, library, citations (identify, cite, export), documents (upload and analyse)
 frontend/
   app/             Next.js pages: dashboard, generator, library, collections, bibliography, settings
   components/      shell, reference editor, metadata form, shared UI
@@ -103,8 +105,15 @@ frontend/
 - **Authentication** is email and password with signed tokens, built into the API, so
   the app runs without any external service. It can be replaced by Supabase Auth later.
 
+- **Document check reads footnotes, conservatively.** Text is only treated as a citation
+  when all of it fits a known citation shape; prose is left alone. It is tuned to OSCOLA,
+  with partial Bluebook support. Page numbers for Word files come from the layout Word
+  last saved, so confirm them against the final PDF; scanned PDFs need OCR first.
+- **PDF reading uses PyMuPDF**, which is licensed under the AGPL (or a commercial licence
+  from Artifex). Check that this suits how you plan to distribute CiteRight.
+
 ## Not in the MVP
 
-PDF upload and metadata extraction, AI-assisted identification, Chicago and MLA styles,
+Identifying a single source from an uploaded PDF, AI-assisted identification, Chicago and MLA styles,
 HUDOC / EUR-Lex / UN Treaty Collection / OpenAlex integrations, browser extension,
 collaboration, Word integration and memorial auditing (PRD roadmap 1.5–3.0).

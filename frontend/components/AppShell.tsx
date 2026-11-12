@@ -19,6 +19,7 @@ export function useSession(): Session {
 const NAV = [
   { href: "/", label: "Dashboard" },
   { href: "/generate", label: "Citation Generator" },
+  { href: "/documents", label: "Document Check" },
   { href: "/library", label: "My Library" },
   { href: "/collections", label: "Collections" },
   { href: "/bibliography", label: "Bibliography" },

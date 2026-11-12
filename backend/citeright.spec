@@ -12,14 +12,28 @@ datas += collect_data_files("docx")
 datas += collect_data_files("reportlab")
 
 hiddenimports = collect_submodules("uvicorn") + collect_submodules("reportlab.pdfbase")
+hiddenimports += ["python_multipart", "multipart", "lxml.etree", "lxml._elementpath"]  # uploads and Word files
+
+hiddenimports += ["pymupdf"]  # PDF reading
 
 a = Analysis(
     ["desktop.py"],
     pathex=["."],
     datas=datas,
     hiddenimports=hiddenimports,
-    excludes=["psycopg", "psycopg_binary", "pytest", "tkinter"],
+    # Not needed by the desktop app: PostgreSQL driver, test tools, and PyMuPDF's optional
+    # layout-analysis add-ons (they would triple the size of the executable).
+    excludes=["psycopg", "psycopg_binary", "pytest", "tkinter", "pymupdf.layout", "pymupdf4llm", "pymupdf_layout", "onnxruntime", "numpy"],
 )
+
+
+def _unused(entry) -> bool:
+    name = entry[0].replace("\\", "/").lower()
+    return any(part in name for part in ("pymupdf/layout", "pymupdf/mupdf-devel", "onnxruntime", "networkx", "numpy"))
+
+
+a.datas = [entry for entry in a.datas if not _unused(entry)]
+a.binaries = [entry for entry in a.binaries if not _unused(entry)]
 pyz = PYZ(a.pure)
 exe = EXE(
     pyz,

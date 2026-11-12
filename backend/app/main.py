@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 
 from . import config
 from .db import init_db
-from .routers import auth, citations, library
+from .routers import auth, citations, documents, library
 
 
 @asynccontextmanager
@@ -20,7 +20,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="CiteRight API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="CiteRight API", version="1.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ORIGINS,
@@ -31,6 +31,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(library.router)
 app.include_router(citations.router)
+app.include_router(documents.router)
 
 
 @app.get("/api/health")

@@ -68,14 +68,15 @@ def html_to_runs(markup: str) -> list[dict[str, str]]:
     return [r for r in parser.runs if r["text"]]
 
 
-def _section_runs(sections: list[dict]) -> list[tuple[str, list[list[dict[str, str]]]]]:
+def _section_runs(sections: list[dict]) -> list[tuple[str, list[tuple[list[dict[str, str]], str]]]]:
+    """(heading, [(styled runs, page references)]) for every non-empty section."""
     out = []
     for section in sections:
         entries = []
         for entry in section.get("entries", []):
             runs = html_to_runs(entry["html"]) if entry.get("html") else [{"text": entry.get("text", ""), "style": ""}]
             if any(r["text"].strip() for r in runs):
-                entries.append(runs)
+                entries.append((runs, str(entry.get("pages") or "")))
         if entries:
             out.append((section.get("heading", ""), entries))
     return out
@@ -86,16 +87,21 @@ def to_txt(title: str, sections: list[dict]) -> bytes:
     for heading, entries in _section_runs(sections):
         if heading:
             lines += [heading, "-" * len(heading)]
-        lines += ["".join(r["text"] for r in runs).strip() for runs in entries]
+        for runs, pages in entries:
+            line = "".join(r["text"] for r in runs).strip()
+            lines.append(f"{line} {'.' * max(3, 70 - len(line) - len(pages))} {pages}" if pages else line)
         lines.append("")
     return "\n".join(lines).rstrip("\n").encode("utf-8") + b"\n"
 
 
 def to_docx(title: str, sections: list[dict]) -> bytes:
     from docx import Document
+    from docx.enum.text import WD_TAB_ALIGNMENT, WD_TAB_LEADER
     from docx.shared import Cm, Pt
 
     document = Document()
+    section = document.sections[0]
+    text_width = section.page_width - section.left_margin - section.right_margin
     normal = document.styles["Normal"]
     normal.font.name = "Times New Roman"
     normal.font.size = Pt(12)
@@ -104,7 +110,7 @@ def to_docx(title: str, sections: list[dict]) -> bytes:
     for heading, entries in _section_runs(sections):
         if heading:
             document.add_heading(heading, level=2)
-        for runs in entries:
+        for runs, pages in entries:
             paragraph = document.add_paragraph()
             paragraph.paragraph_format.left_indent = Cm(1.27)
             paragraph.paragraph_format.first_line_indent = Cm(-1.27)
@@ -113,6 +119,10 @@ def to_docx(title: str, sections: list[dict]) -> bytes:
                 piece = paragraph.add_run(run["text"])
                 piece.italic = run["style"] == "i" or None
                 piece.font.small_caps = run["style"] == "sc" or None
+            if pages:  # page references at the right margin, joined by a dotted leader
+                paragraph.paragraph_format.right_indent = Cm(1.5)
+                paragraph.paragraph_format.tab_stops.add_tab_stop(text_width, WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.DOTS)
+                paragraph.add_run("\t" + pages)
     buffer = io.BytesIO()
     document.save(buffer)
     return buffer.getvalue()
@@ -161,10 +171,11 @@ def to_pdf(title: str, sections: list[dict]) -> bytes:
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.units import cm
-    from reportlab.platypus import Paragraph, SimpleDocTemplate
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
 
     regular, italic, bold = _pdf_font_names()
     body = ParagraphStyle("entry", fontName=regular, fontSize=11, leading=15, leftIndent=1.27 * cm, firstLineIndent=-1.27 * cm, spaceAfter=6)
+    right = ParagraphStyle("pages", fontName=regular, fontSize=11, leading=15, alignment=2, spaceAfter=6)
     h1 = ParagraphStyle("h1", fontName=bold, fontSize=16, leading=20, spaceAfter=14)
     h2 = ParagraphStyle("h2", fontName=bold, fontSize=12.5, leading=16, spaceBefore=12, spaceAfter=8)
 
@@ -186,7 +197,14 @@ def to_pdf(title: str, sections: list[dict]) -> bytes:
     for heading, entries in _section_runs(sections):
         if heading:
             story.append(Paragraph(html.escape(heading), h2))
-        story += [Paragraph(markup(runs), body) for runs in entries]
+        for runs, pages in entries:
+            if pages:
+                row = [[Paragraph(markup(runs), body), Paragraph(html.escape(pages), right)]]
+                table = Table(row, colWidths=[12.2 * cm, 3.8 * cm])
+                table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0), ("TOPPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (-1, -1), 0)]))
+                story.append(table)
+            else:
+                story.append(Paragraph(markup(runs), body))
     buffer = io.BytesIO()
     SimpleDocTemplate(buffer, pagesize=A4, title=title or "Bibliography", author="CiteRight", leftMargin=2.5 * cm, rightMargin=2.5 * cm, topMargin=2.5 * cm, bottomMargin=2.5 * cm).build(story)
     return buffer.getvalue()

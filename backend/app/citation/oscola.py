@@ -95,6 +95,11 @@ def _generic_pin(kind: str, value: str) -> str:
     return value if kind == "page" else _statute_pin(kind, value)
 
 
+def _paras(value: str) -> str:
+    """Judgment paragraphs: '15' -> '[15]', '15–20' -> '[15]–[20]', '15, 20' -> '[15], [20]'."""
+    return re.sub(r"\d+[A-Za-z]?", lambda match: f"[{match.group()}]", value)
+
+
 def _case(m: dict, pin: dict | None, bib: bool) -> Rich:
     title = normalise_v(g(m, "title"), dotted=False)
     name = Rich(title) if bib else I(title)
@@ -103,7 +108,7 @@ def _case(m: dict, pin: dict | None, bib: bool) -> Rich:
     if neutral:
         out = join(" ", [name, join(", ", [neutral, report])])
         if value:
-            out += f" [{value}]" if kind == "para" else f" {_generic_pin(kind, value)}"
+            out += f" {_paras(value)}" if kind == "para" else f" {_generic_pin(kind, value)}"
         return out
     if report:
         out = join(" ", [name, report])
@@ -115,7 +120,8 @@ def _case(m: dict, pin: dict | None, bib: bool) -> Rich:
         if tail:
             out += f" ({' '.join(tail)})"
         if value:
-            out += f" [{value}]" if kind == "para" else f" {_generic_pin(kind, value)}"
+            # Square brackets belong to neutral citations; reported-only cases take 'para'.
+            out += f", {_statute_pin('para', value)}" if kind == "para" else f" {_generic_pin(kind, value)}"
         return out
     out = join(" ", [name, g(m, "case_number")])
     tail = ", ".join(x for x in [court, format_date(g(m, "date"), "oscola") or year_of(m)] if x)
@@ -244,8 +250,10 @@ def _short(m: dict, pin: dict | None) -> Rich:
         return out
     if kind == "case":
         out = I(case_short_name(normalise_v(g(m, "title"), dotted=False))) + " (n #)"
-        if pin_value:
-            out += f" [{pin_value}]" if pin_kind == "para" else f" {_generic_pin(pin_kind, pin_value)}"
+        if pin_value and pin_kind == "para":
+            out += f" {_paras(pin_value)}" if g(m, "neutral_citation") else f" {_statute_pin('para', pin_value)}"
+        elif pin_value:
+            out += f" {_generic_pin(pin_kind, pin_value)}"
         return out
     ppl = people(m, "authors") or people(m, "editors")
     if ppl:
