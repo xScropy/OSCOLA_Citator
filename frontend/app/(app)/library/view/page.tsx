@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import ReferenceEditor from "@/components/ReferenceEditor";
 import { ErrorNote } from "@/components/ui";
@@ -9,13 +9,17 @@ import { api, ApiError } from "@/lib/api";
 import type { Reference } from "@/lib/types";
 
 export default function ReferencePage() {
-  const { id } = useParams<{ id: string }>();
+  const id = useSearchParams().get("id");
   const router = useRouter();
   const [reference, setReference] = useState<Reference | null>(null);
   const [error, setError] = useState("");
   const [savedAt, setSavedAt] = useState(0);
 
   useEffect(() => {
+    if (!id || !/^\d+$/.test(id)) {
+      setError("This reference is no longer in your library.");
+      return;
+    }
     api<Reference>(`/references/${id}`)
       .then(setReference)
       .catch((e: ApiError) => setError(e.status === 404 ? "This reference is no longer in your library." : e.message));

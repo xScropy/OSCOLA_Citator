@@ -11,3 +11,8 @@ node_modules/
 .next/
 
 .DS_Store
+
+# Builds
+frontend/out/
+backend/build/
+backend/dist/

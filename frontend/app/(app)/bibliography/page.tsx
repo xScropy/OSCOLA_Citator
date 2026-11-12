@@ -290,7 +290,7 @@ export default function BibliographyPage() {
               <ul className="mt-1 list-disc pl-5">
                 {generated.needs_attention.map((item) => (
                   <li key={item.id}>
-                    <Link className="underline" href={`/library/${item.id}`}>
+                    <Link className="underline" href={`/library/view?id=${item.id}`}>
                       {item.title}
                     </Link>
                     {item.missing.length > 0 ? ` · missing ${item.missing.join(", ")}` : " · not verified against a source"}

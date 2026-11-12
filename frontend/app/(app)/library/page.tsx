@@ -123,7 +123,7 @@ export default function LibraryPage() {
                   <ul className="space-y-2">
                     {group.items.map((item) => (
                       <li key={item.id} className="flex flex-wrap items-start justify-between gap-2 text-sm">
-                        <Link href={`/library/${item.id}`} className="min-w-0 flex-1 hover:underline">
+                        <Link href={`/library/view?id=${item.id}`} className="min-w-0 flex-1 hover:underline">
                           <CitationText form={item.citations.forms.full} />
                         </Link>
                         <div className="flex gap-1">

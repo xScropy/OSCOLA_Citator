@@ -29,3 +29,7 @@ CROSSREF_MAILTO = os.getenv("CROSSREF_MAILTO", "")
 COURTLISTENER_TOKEN = os.getenv("COURTLISTENER_TOKEN", "")
 
 HTTP_TIMEOUT_SECONDS = float(os.getenv("HTTP_TIMEOUT_SECONDS", "10"))
+
+# Folder with the exported web interface (frontend/out). When set, the API serves the
+# interface itself, so the whole app runs as one process. Used by the desktop build.
+STATIC_DIR = os.getenv("CITERIGHT_STATIC_DIR", "")

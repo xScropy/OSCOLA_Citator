@@ -186,7 +186,7 @@ export default function ReferenceEditor({ draft, onSaved, onCancel }: { draft: D
                   <CitationText form={d.citation} />
                   <p className="mt-1 text-xs text-ink-soft">
                     {d.reasons.join(" · ")} ·{" "}
-                    <Link className="underline" href={`/library/${d.id}`}>
+                    <Link className="underline" href={`/library/view?id=${d.id}`}>
                       Open existing reference
                     </Link>
                   </p>

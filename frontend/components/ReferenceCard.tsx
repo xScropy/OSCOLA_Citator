@@ -42,7 +42,7 @@ export default function ReferenceCard({
         {reference.notes && <p className="mt-1.5 line-clamp-2 whitespace-pre-line text-sm text-ink-soft">{reference.notes}</p>}
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           <CopyButton form={form} />
-          <Link href={`/library/${reference.id}`} className="btn !px-2 !py-1 text-xs">
+          <Link href={`/library/view?id=${reference.id}`} className="btn !px-2 !py-1 text-xs">
             Open
           </Link>
           {onDelete && (

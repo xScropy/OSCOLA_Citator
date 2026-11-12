@@ -92,7 +92,7 @@ export default function GeneratePage() {
           >
             Cite another source
           </button>
-          <Link className="btn" href={`/library/${saved.id}`}>
+          <Link className="btn" href={`/library/view?id=${saved.id}`}>
             Open reference
           </Link>
           <Link className="btn" href="/library">

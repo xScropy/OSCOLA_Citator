@@ -1,0 +1,98 @@
+name: Release
+
+# Builds CiteRight.exe on Windows and publishes it as a GitHub release.
+# Run it from the Actions tab (Run workflow) or by pushing a tag such as v1.0.1.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag, e.g. v1.0.0"
+        required: true
+        default: v1.0.0
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      VERSION: ${{ github.event_name == 'push' && github.ref_name || inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the web interface
+        working-directory: frontend
+        env:
+          STATIC_EXPORT: "1"
+        run: |
+          npm ci
+          npm run build
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: Test the backend
+        working-directory: backend
+        run: |
+          pip install -r requirements-dev.txt
+          python -m pytest -q
+
+      - name: Build CiteRight.exe
+        working-directory: backend
+        run: |
+          pip install pyinstaller
+          pyinstaller --noconfirm citeright.spec
+
+      - name: Check that the executable starts
+        shell: pwsh
+        env:
+          CITERIGHT_NO_BROWSER: "1"
+          CITERIGHT_PORT: "8765"
+        run: |
+          $app = Start-Process -FilePath backend\dist\CiteRight.exe -PassThru
+          try {
+            $up = $false
+            foreach ($i in 1..60) {
+              Start-Sleep -Seconds 1
+              try {
+                $health = Invoke-RestMethod http://127.0.0.1:8765/api/health -TimeoutSec 2
+                if ($health.status -eq "ok") { $up = $true; break }
+              } catch { }
+            }
+            if (-not $up) { throw "CiteRight.exe did not start" }
+            $page = Invoke-WebRequest http://127.0.0.1:8765/login -UseBasicParsing
+            if ($page.Content -notmatch "CiteRight") { throw "The web interface is not being served" }
+          } finally {
+            Stop-Process -Id $app.Id -Force
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CiteRight-windows
+          path: backend/dist/CiteRight.exe
+
+      - name: Publish the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="CiteRight for Windows. Download CiteRight.exe below and double-click it: a window opens showing the address, and the app opens in your browser. Your library is stored on your computer in %APPDATA%\\CiteRight. Close the window to quit.
+
+          Windows may show a \"Windows protected your PC\" notice because the file is not code-signed: choose More info, then Run anyway."
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" backend/dist/CiteRight.exe --clobber
+          else
+            gh release create "$VERSION" backend/dist/CiteRight.exe --target "$GITHUB_SHA" --title "CiteRight ${VERSION#v}" --notes "$notes"
+          fi

@@ -22,6 +22,19 @@ This repository implements the MVP (1.0) of the product requirements document.
 | Bibliography | Grouped and ordered per style; List of Authorities with customisable categories; editable before export. |
 | Export | DOCX, PDF, TXT, BibTeX, RIS, CSV, CSL-JSON, and copy to clipboard with italics. |
 
+## Windows app
+
+Download `CiteRight.exe` from the [latest release](../../releases/latest) and double-click
+it. A window opens showing the local address and the app opens in your browser; close the
+window to quit. Nothing else needs installing. Your library is stored on your computer in
+`%APPDATA%\CiteRight`.
+
+The file is not code-signed, so Windows may show "Windows protected your PC": choose
+**More info**, then **Run anyway**.
+
+The executable is built by the `Release` workflow (`.github/workflows/release.yml`), from
+`backend/desktop.py` and `backend/citeright.spec`.
+
 ## Running it locally
 
 Requirements: Python 3.11+ and Node.js 20+.
